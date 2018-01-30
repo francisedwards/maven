@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:db="http://www.mulesoft.org/schema/mule/db"
-	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
 	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
 	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -23,27 +24,26 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 	</spring:beans>
 	<db:derby-config name="Derby_Configuration"
 		url="jdbc:derby:memory:muleEmbeddedDB;create=true" doc:name="Derby Configuration" />
-    <jms:activemq-connector name="Active_MQ" brokerURL="vm://localhost" validateConnections="true" doc:name="Active MQ"/>
+	<jms:activemq-connector name="Active_MQ"
+		brokerURL="vm://localhost" validateConnections="true" doc:name="Active MQ" />
 	<flow name="retrieveFlights">
 		<http:listener config-ref="HTTP_Listener_Configuration"
 			path="/flights" doc:name="HTTP" />
 		<db:select config-ref="Derby_Configuration" doc:name="Database">
 			<db:parameterized-query><![CDATA[SELECT * FROM FLIGHTS]]></db:parameterized-query>
 		</db:select>
-        <json:object-to-json-transformer doc:name="Object to JSON"/>
-        <dw:transform-message doc:name="Transform Message">
-            <dw:set-payload><![CDATA[%dw 1.0
-%output application/json
----
-{
-}]]></dw:set-payload>
-        </dw:transform-message>
-        <jms:outbound-endpoint queue="flights" connector-ref="Active_MQ" doc:name="JMS"/>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<set-property propertyName="#['Content-Type']" value="#['application/json']"
+			mimeType="application/json" doc:name="Property" />
+		<jms:outbound-endpoint queue="flights"
+			connector-ref="Active_MQ" doc:name="JMS" />
 	</flow>
-    <flow name="logFlights">
-        <jms:inbound-endpoint queue="flights" connector-ref="Active_MQ" doc:name="JMS"/>
-        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
-    </flow>
+	<flow name="logFlights">
+		<jms:inbound-endpoint queue="flights"
+			connector-ref="Active_MQ" doc:name="JMS" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+	</flow>
 
 
 	<flow name="mavenFlow">
